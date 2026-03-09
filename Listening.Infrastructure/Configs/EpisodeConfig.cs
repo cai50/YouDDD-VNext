@@ -18,6 +18,7 @@ namespace Listening.Domain.Configs
             //实现类注入DbContext，然后Dbcontext.Database.IsSqlServer(); 
             builder.Property(e => e.AudioUrl).HasMaxLength(1000).IsUnicode().IsRequired();
             builder.Property(e => e.Subtitle).HasMaxLength(int.MaxValue).IsUnicode().IsRequired();
+            builder.Property(e => e.ZhSubtitle).HasMaxLength(int.MaxValue).IsUnicode().IsRequired();
             builder.Property(e => e.SubtitleType).HasMaxLength(10).IsUnicode(false).IsRequired();
         }
     }

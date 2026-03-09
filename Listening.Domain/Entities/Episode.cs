@@ -26,6 +26,9 @@ public record Episode : AggregateRootEntity, IAggregateRoot
 
     //因为启用了<Nullable>enable</Nullable>，所以string是不可空，Migration会默认这个，string?是可空
     public string Subtitle { get; private set; }//原文字幕内容
+
+    public string ZhSubtitle { get; private set; }//原文字幕内容
+
     public string SubtitleType { get; private set; }//原文字幕格式
 
     /// <summary>
