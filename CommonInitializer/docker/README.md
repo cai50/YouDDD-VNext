@@ -55,6 +55,10 @@ dotnet ef database update --project ./MediaEncoder.Infrastructure  --startup-pro
 dotnet ef database update --project ./FileService.Infrastructure  --startup-project ./FileService.WebAPI 
 dotnet ef database update --project ./Listening.Infrastructure  --startup-project ./Listening.Admin.WebAPI 
 ```
+
+```add
+dotnet ef migrations add Episode0309 --no-build --project Listening.Infrastructure --startup-project Listening.Admin.WebAPI
+```
 数据库迁移指令，全部执行成功之后，会生成14张数据库，如下图所示
 
 ![dbtable.jpg](Resources/dbtable.jpg)
