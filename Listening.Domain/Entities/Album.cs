@@ -22,22 +22,29 @@ namespace Listening.Domain.Entities
         public MultilingualString Name { get; private set; }
 
         /// <summary>
+        /// 封面图片
+        /// </summary>
+        public Uri? CoverUrl { get; private set; }
+
+        /// <summary>
         /// 列表中的显示序号
         /// </summary>
         public int SequenceNumber { get; private set; }
 
         public Guid CategoryId { get; private set; }
 
-        public static Album Create(Guid id, int sequenceNumber, MultilingualString name, Guid categoryId)
+        public static Album Create(Guid id, int sequenceNumber, MultilingualString name, Guid categoryId, Uri? coverUrl = null)
         {
             Album album = new Album();
             album.Id = id;
             album.SequenceNumber = sequenceNumber;
             album.Name = name;
             album.CategoryId = categoryId;
+            album.CoverUrl = coverUrl;
             album.IsVisible = false;//Album新建以后默认不可见，需要手动Show
             return album;
         }
+
         public Album ChangeSequenceNumber(int value)
         {
             this.SequenceNumber = value;
@@ -49,6 +56,13 @@ namespace Listening.Domain.Entities
             this.Name = value;
             return this;
         }
+
+        public Album ChangeCoverUrl(Uri? value)
+        {
+            this.CoverUrl = value;
+            return this;
+        }
+
         public Album Hide()
         {
             this.IsVisible = false;

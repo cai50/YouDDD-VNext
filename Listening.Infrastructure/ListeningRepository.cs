@@ -40,6 +40,11 @@ namespace Listening.Infrastructure
             return maxSeq ?? 0;
         }
 
+        public Task<Album[]> GetAlbumsAsync()
+        {
+            return dbCtx.Albums.OrderBy(a => a.SequenceNumber).ToArrayAsync();
+        }
+
         public Task<Album[]> GetAlbumsByCategoryIdAsync(Guid categoryId)
         {
             return dbCtx.Albums.OrderBy(e => e.SequenceNumber).Where(a => a.CategoryId == categoryId).ToArrayAsync();

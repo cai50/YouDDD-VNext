@@ -13,11 +13,11 @@ namespace Listening.Domain
             this.repository = repository;
         }
 
-        public async Task<Album> AddAlbumAsync(Guid categoryId, MultilingualString name)
+        public async Task<Album> AddAlbumAsync(Guid categoryId, MultilingualString name, Uri? coverUrl = null)
         {
             int maxSeq = await repository.GetMaxSeqOfAlbumsAsync(categoryId);
             var id = Guid.NewGuid();
-            return Album.Create(id, maxSeq + 1, name, categoryId);
+            return Album.Create(id, maxSeq + 1, name, categoryId, coverUrl);
         }
 
         public async Task SortAlbumsAsync(Guid categoryId, Guid[] sortedAlbumIds)

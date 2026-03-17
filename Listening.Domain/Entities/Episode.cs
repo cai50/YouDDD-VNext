@@ -2,6 +2,7 @@
 using Listening.Domain.Subtitles;
 using Listening.Domain.ValueObjects;
 using Zack.DomainCommons.Models;
+using System;
 
 namespace Listening.Domain.Entities;
 //EF Core中的实体和DDD的中的实体不一样。DDD中的实体是Data Object，是和数据库表以及字段一一对应的，EF Core中的实体更像领域模型，DO是藏在EF Core框架中的。
@@ -25,9 +26,7 @@ public record Episode : AggregateRootEntity, IAggregateRoot
     public double DurationInSecond { get; private set; }//音频时长（秒数）
 
     //因为启用了<Nullable>enable</Nullable>，所以string是不可空，Migration会默认这个，string?是可空
-    public string Subtitle { get; private set; }//原文字幕内容
-
-    public string ZhSubtitle { get; private set; }//原文字幕内容
+    public MultiSubTitle Subtitle { get; private set; }//原文字幕内容
 
     public string SubtitleType { get; private set; }//原文字幕格式
 
@@ -84,7 +83,7 @@ public record Episode : AggregateRootEntity, IAggregateRoot
             throw new ArgumentOutOfRangeException(nameof(subtitleType), $"subtitleType={subtitleType} is not supported.");
         }
         this.SubtitleType = subtitleType;
-        this.Subtitle = subtitle;
+        this.Subtitle = parser.Trans(subtitle);
         this.AddDomainEventIfAbsent(new EpisodeUpdatedEvent(this));
         return this;
     }
@@ -108,10 +107,21 @@ public record Episode : AggregateRootEntity, IAggregateRoot
         this.AddDomainEvent(new EpisodeDeletedEvent(this.Id));
     }
 
-    public IEnumerable<Sentence> ParseSubtitle()
+    public (IEnumerable<Sentence>, IEnumerable<Sentence>) ParseSubtitle(bool IsEng = true)
     {
         var parser = SubtitleParserFactory.GetParser(this.SubtitleType);
-        return parser.Parse(this.Subtitle);
+        return parser.ParseV2(this.Subtitle);
+    }
+
+    public void TransSubtitle(string value)
+    {
+        var parser = SubtitleParserFactory.GetParser(this.SubtitleType);
+        if (parser == null)
+        {
+            throw new ArgumentOutOfRangeException(nameof(this.SubtitleType), $"subtitleType={this.SubtitleType} is not supported.");
+        }
+        this.SubtitleType = "json";
+        this.Subtitle = parser.Trans(value);
     }
     public class Builder
     {
@@ -121,7 +131,7 @@ public record Episode : AggregateRootEntity, IAggregateRoot
         private Guid albumId;
         private Uri audioUrl;
         private double durationInSecond;
-        private string subtitle;
+        private MultiSubTitle subtitle;
         private string subtitleType;
         public Builder Id(Guid value)
         {
@@ -155,7 +165,17 @@ public record Episode : AggregateRootEntity, IAggregateRoot
         }
         public Builder Subtitle(string value)
         {
-            this.subtitle = value;
+            var parser = SubtitleParserFactory.GetParser(this.subtitleType);
+            if (parser != null)
+            {
+                // only change stored subtitleType to json when original type is ass
+                if (string.Equals(this.subtitleType, "ass", StringComparison.OrdinalIgnoreCase))
+                {
+                    this.subtitleType = "json";
+                    this.subtitle = parser.Trans(value);
+                }
+
+            }
             return this;
         }
         public Builder SubtitleType(string value)

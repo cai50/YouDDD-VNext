@@ -1,6 +1,5 @@
-﻿
-namespace Listening.Main.WebAPI.Controllers.Albums.ViewModels;
-public record AlbumVM(Guid Id, MultilingualString Name, Guid CategoryId)
+﻿namespace Listening.Main.WebAPI.Controllers.Albums.ViewModels;
+public record AlbumVM(Guid Id, MultilingualString Name, Guid CategoryId, Uri? CoverUrl)
 {
     public static AlbumVM? Create(Album? a)
     {
@@ -8,7 +7,7 @@ public record AlbumVM(Guid Id, MultilingualString Name, Guid CategoryId)
         {
             return null;
         }
-        return new AlbumVM(a.Id, a.Name, a.CategoryId);
+        return new AlbumVM(a.Id, a.Name, a.CategoryId, a.CoverUrl);
     }
 
     public static AlbumVM[] Create(Album[] items)

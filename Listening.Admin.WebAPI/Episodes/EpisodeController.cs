@@ -1,5 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FileService.SDK.NETCore;
+using Listening.Admin.WebAPI.Options;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
+using System.Globalization;
+using System.IO;
+using System.Net.Http;
+using System.Text.RegularExpressions;
 using Zack.EventBus;
+using Zack.JWT;
 
 namespace Listening.Admin.WebAPI.Episodes;
 [Route("[controller]/[action]")]
@@ -13,15 +21,30 @@ public class EpisodeController : ControllerBase
     private readonly EncodingEpisodeHelper encodingEpisodeHelper;
     private readonly IEventBus eventBus;
     private readonly ListeningDomainService domainService;
+
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly IOptionsSnapshot<JWTOptions> jwtOptions;
+    private readonly ITokenService tokenService;
+    private readonly IOptionsSnapshot<FileServiceOptions> optionFileService;
+
     public EpisodeController(ListeningDbContext dbContext,
             EncodingEpisodeHelper encodingEpisodeHelper,
-            IEventBus eventBus, ListeningDomainService domainService, IListeningRepository repository)
+            IEventBus eventBus, ListeningDomainService domainService,
+            IListeningRepository repository,
+            IHttpClientFactory httpClientFactory,
+            IOptionsSnapshot<JWTOptions> jwtOptions,
+            ITokenService tokenService,
+            IOptionsSnapshot<FileServiceOptions> optionFileService)
     {
         this.dbContext = dbContext;
         this.encodingEpisodeHelper = encodingEpisodeHelper;
         this.eventBus = eventBus;
         this.domainService = domainService;
         this.repository = repository;
+        this.httpClientFactory = httpClientFactory;
+        this.jwtOptions = jwtOptions;
+        this.tokenService = tokenService;
+        this.optionFileService = optionFileService;
     }
 
     [HttpPost]
@@ -30,8 +53,10 @@ public class EpisodeController : ControllerBase
         //如果上传的是m4a，不用转码，直接存到数据库
         if (req.AudioUrl.ToString().EndsWith("m4a", StringComparison.OrdinalIgnoreCase))
         {
+            
             Episode episode = await domainService.AddEpisodeAsync(req.Name, req.AlbumId,
                 req.AudioUrl, req.DurationInSecond, req.SubtitleType, req.Subtitle);
+            
             dbContext.Add(episode);
             return episode.Id;
         }
@@ -47,6 +72,98 @@ public class EpisodeController : ControllerBase
             eventBus.Publish("MediaEncoding.Created", new { MediaId = episodeId, MediaUrl = req.AudioUrl, OutputFormat = "m4a", SourceSystem = "Listening" });//启动转码
             return episodeId;
         }
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<ActionResult<EpisodeImportFromFoldersResponse>> ImportFromFolders(
+        EpisodeImportFromFoldersRequest req, CancellationToken cancellationToken = default)
+    {
+        Uri urlRoot = optionFileService.Value.UrlRoot;
+        FileServiceClient fileService = new FileServiceClient(httpClientFactory,
+            urlRoot, jwtOptions.Value, tokenService);
+
+        Dictionary<string, FileInfo> subtitleFiles = new DirectoryInfo(req.SubtitleDir)
+            .GetFiles("*.ass", SearchOption.TopDirectoryOnly)
+            .GroupBy(f => Path.GetFileNameWithoutExtension(f.Name), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        FileInfo[] audioFiles = new DirectoryInfo(req.AudioDir)
+            .GetFiles("*.m4a", SearchOption.TopDirectoryOnly)
+            .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        List<string> importedFiles = new List<string>();
+        List<string> skippedMessages = new List<string>();
+        var existingEpisodes = await repository.GetEpisodesByAlbumIdAsync(req.AlbumId);
+        HashSet<string> existingEnglishNames = existingEpisodes
+            .Select(e => e.Name.English)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        List<Episode> newEpisodes = new List<Episode>();
+
+        foreach (FileInfo audioFile in audioFiles)
+        {
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(audioFile.Name);
+            if (existingEnglishNames.Contains(fileNameWithoutExt))
+            {
+                skippedMessages.Add($"跳过{audioFile.Name}：文件已导入");
+                continue;
+            }
+            if (!subtitleFiles.TryGetValue(fileNameWithoutExt, out FileInfo? subtitleFile))
+            {
+                skippedMessages.Add($"跳过{audioFile.Name}：没有找到同名.ass字幕");
+                continue;
+            }
+            if (!req.ChineseNames.TryGetValue(fileNameWithoutExt, out string? chineseName)
+                || string.IsNullOrWhiteSpace(chineseName))
+            {
+                skippedMessages.Add($"跳过{audioFile.Name}：没有提供中文名");
+                continue;
+            }
+
+            string subtitle = await System.IO.File.ReadAllTextAsync(subtitleFile.FullName, cancellationToken);
+            double durationInSecond = GetDurationInSecondFromAss(subtitle);
+            if (durationInSecond <= 0)
+            {
+                skippedMessages.Add($"跳过{audioFile.Name}：无法从.ass字幕解析时长");
+                continue;
+            }
+
+            try
+            {
+                Uri audioUrl = await fileService.UploadAsync(audioFile, cancellationToken);
+                MultilingualString name = new MultilingualString(chineseName, fileNameWithoutExt);
+
+                Episode episode = await domainService.AddEpisodeAsync(name, req.AlbumId,
+                    audioUrl, durationInSecond, "ass", subtitle);
+
+                dbContext.Add(episode);
+                newEpisodes.Add(episode);
+                importedFiles.Add(audioFile.Name);
+                existingEnglishNames.Add(fileNameWithoutExt);
+            }
+            catch (Exception ex)
+            {
+                skippedMessages.Add($"跳过{audioFile.Name}：{ex.Message}");
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var episodesForSort = existingEpisodes.Concat(newEpisodes)
+            .OrderBy(e => GetEpisodeOrderFromEnglishName(e.Name.English))
+            .ThenBy(e => e.SequenceNumber)
+            .ToArray();
+        for (int i = 0; i < episodesForSort.Length; i++)
+        {
+            episodesForSort[i].ChangeSequenceNumber(i + 1);
+        }
+
+        return new EpisodeImportFromFoldersResponse(
+            importedFiles.Count,
+            skippedMessages.Count,
+            importedFiles.ToArray(),
+            skippedMessages.ToArray());
     }
 
     [HttpPut]
@@ -104,7 +221,7 @@ public class EpisodeController : ControllerBase
         foreach (Guid episodeId in episodeIds)
         {
             var encodingEpisode = await encodingEpisodeHelper.GetEncodingEpisodeAsync(episodeId);
-            if (!encodingEpisode.Status.EqualsIgnoreCase("Completed"))//不显示已经完成的
+            if (!encodingEpisode.Status.EqualsIgnoreCase("Completed"))
             {
                 list.Add(encodingEpisode);
             }
@@ -144,5 +261,45 @@ public class EpisodeController : ControllerBase
     {
         await domainService.SortEpisodesAsync(albumId, req.SortedEpisodeIds);
         return Ok();
+    }
+
+    private static double GetDurationInSecondFromAss(string subtitle)
+    {
+        Regex regex = new Regex(
+            @"^Dialogue:\s*\d+,(?<start>\d+:\d{2}:\d{2}\.\d{2,3}),(?<end>\d+:\d{2}:\d{2}\.\d{2,3}),",
+            RegexOptions.Multiline);
+
+        TimeSpan maxEndTime = TimeSpan.Zero;
+        MatchCollection matches = regex.Matches(subtitle);
+        foreach (Match match in matches)
+        {
+            string endText = match.Groups["end"].Value;
+            if (TryParseAssTime(endText, out TimeSpan endTime) && endTime > maxEndTime)
+            {
+                maxEndTime = endTime;
+            }
+        }
+        return maxEndTime.TotalSeconds;
+    }
+
+    private static bool TryParseAssTime(string value, out TimeSpan result)
+    {
+        string[] formats = new[]
+        {
+            @"h\:mm\:ss\.ff",
+            @"h\:mm\:ss\.fff"
+        };
+        return TimeSpan.TryParseExact(value, formats, CultureInfo.InvariantCulture, out result);
+    }
+
+    private static int GetEpisodeOrderFromEnglishName(string englishName)
+    {
+        var matches = Regex.Matches(englishName, @"E(?<num>\d{1,3})", RegexOptions.IgnoreCase);
+        if (matches.Count == 0)
+        {
+            return int.MaxValue;
+        }
+        var lastMatch = matches[^1];
+        return int.Parse(lastMatch.Groups["num"].Value);
     }
 }

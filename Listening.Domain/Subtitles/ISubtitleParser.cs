@@ -1,4 +1,5 @@
 ﻿using Listening.Domain.ValueObjects;
+using Zack.DomainCommons.Models;
 
 namespace Listening.Domain.Subtitles
 {
@@ -16,6 +17,10 @@ namespace Listening.Domain.Subtitles
         /// </summary>
         /// <param name="subtitle"></param>
         /// <returns></returns>
-        IEnumerable<Sentence> Parse(string subtitle);
+        IEnumerable<Sentence> Parse(string subtitle, bool IsEng);
+
+        (IEnumerable<Sentence>, IEnumerable<Sentence>) ParseV2(MultiSubTitle subtitle);
+
+        MultiSubTitle Trans(string subtitle);
     }
 }

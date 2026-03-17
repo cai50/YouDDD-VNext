@@ -1,5 +1,4 @@
-﻿
-using Listening.Main.WebAPI.Controllers.Albums.ViewModels;
+﻿using Listening.Main.WebAPI.Controllers.Albums.ViewModels;
 
 namespace Listening.Main.WebAPI.Controllers;
 
@@ -13,6 +12,18 @@ public class AlbumController : ControllerBase
     {
         this.repository = repository;
         this.cacheHelper = cacheHelper;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<AlbumVM[]>> FindAll()
+    {
+        Task<Album[]> FindData()
+        {
+            return repository.GetAlbumsAsync();
+        }
+        var task = cacheHelper.GetOrCreateAsync($"AlbumController.FindAll",
+            async (e) => AlbumVM.Create(await FindData()));
+        return await task;
     }
 
     [HttpGet]

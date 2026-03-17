@@ -57,7 +57,8 @@ dotnet ef database update --project ./Listening.Infrastructure  --startup-projec
 ```
 
 ```add
-dotnet ef migrations add Episode0309 --no-build --project Listening.Infrastructure --startup-project Listening.Admin.WebAPI
+dotnet ef migrations remove --project Listening.Infrastructure --startup-project Listening.Admin.WebAPI
+dotnet ef migrations add Episode0311 --no-build --project Listening.Infrastructure --startup-project Listening.Admin.WebAPI
 ```
 数据库迁移指令，全部执行成功之后，会生成14张数据库，如下图所示
 

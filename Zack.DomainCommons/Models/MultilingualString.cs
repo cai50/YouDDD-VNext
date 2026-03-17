@@ -1,4 +1,7 @@
 ﻿namespace Zack.DomainCommons.Models
 {
     public record MultilingualString(string Chinese, string English);
+
+
+    public record MultiSubTitle(string Chinese, string English);
 }

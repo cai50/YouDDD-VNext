@@ -1,5 +1,6 @@
 using CommonInitializer;
 using Listening.Admin.WebAPI.Hubs;
+using Listening.Admin.WebAPI.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,7 +12,9 @@ builder.ConfigureExtraServices(new InitializerOptions
     LogFilePath = "e:/temp/Listening.Admin.log",
     EventBusQueueName = "Listening.Admin"
 });
+builder.Services.Configure<FileServiceOptions>(builder.Configuration.GetSection("FileService:Endpoint"));
 builder.Services.AddScoped<EncodingEpisodeHelper>();
+builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen(c =>
 {

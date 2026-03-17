@@ -36,7 +36,7 @@ public class AlbumController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Guid>> Add(AlbumAddRequest req)
     {
-        Album album = await domainService.AddAlbumAsync(req.CategoryId, req.Name);
+        Album album = await domainService.AddAlbumAsync(req.CategoryId, req.Name, req.CoverUrl);
         dbCtx.Add(album);
         return album.Id;
     }
@@ -51,6 +51,7 @@ public class AlbumController : ControllerBase
             return NotFound("id没找到");
         }
         album.ChangeName(request.Name);
+        album.ChangeCoverUrl(request.CoverUrl);
         return Ok();
     }
 

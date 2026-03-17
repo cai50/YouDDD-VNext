@@ -17,8 +17,10 @@ namespace Listening.Domain.Configs
             //那么就定义一个接口提供DbContext属性，仿照ApplyConfigurationsFromAssembly写一个给IEntityTypeConfiguration
             //实现类注入DbContext，然后Dbcontext.Database.IsSqlServer(); 
             builder.Property(e => e.AudioUrl).HasMaxLength(1000).IsUnicode().IsRequired();
-            builder.Property(e => e.Subtitle).HasMaxLength(int.MaxValue).IsUnicode().IsRequired();
-            builder.Property(e => e.ZhSubtitle).HasMaxLength(int.MaxValue).IsUnicode().IsRequired();
+
+            builder.OwnsOneMultiSubTitle(e => e.Subtitle, required: true, maxLength: int.MaxValue);
+            //builder.Property(e => e.Subtitle).HasMaxLength(int.MaxValue).IsUnicode().IsRequired();
+            //builder.Property(e => e.ZhSubtitle).HasMaxLength(int.MaxValue).IsUnicode().IsRequired();
             builder.Property(e => e.SubtitleType).HasMaxLength(10).IsUnicode(false).IsRequired();
         }
     }

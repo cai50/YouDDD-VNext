@@ -1,5 +1,10 @@
 ﻿using Listening.Domain.ValueObjects;
 using Opportunity.LrcParser;
+using Zack.DomainCommons.Models;
+using System.Text.Json;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System;
 
 namespace Listening.Domain.Subtitles
 {
@@ -13,7 +18,7 @@ namespace Listening.Domain.Subtitles
             return typeName.Equals("lrc", StringComparison.OrdinalIgnoreCase);
         }
 
-        public IEnumerable<Sentence> Parse(string subtitle)
+        public IEnumerable<Sentence> Parse(string subtitle, bool IsEng)
         {
             var lyrics = Lyrics.Parse(subtitle);
             if (lyrics.Exceptions.Count > 0)
@@ -44,6 +49,33 @@ namespace Listening.Domain.Subtitles
             sentences[sentences.Count() - 1] = lastSentence;
 
             return sentences;
+        }
+
+        public (IEnumerable<Sentence>, IEnumerable<Sentence>) ParseV2(MultiSubTitle subtitle)
+        {
+            // 分别解析英文和中文的 lrc 内容
+            var enLyrics = Lyrics.Parse(subtitle.English);
+            if (enLyrics.Exceptions.Count > 0)
+            {
+                throw new ApplicationException("lrc解析失败");
+            }
+            enLyrics.Lyrics.PreApplyOffset();
+            var enSubs = FromLrc(enLyrics.Lyrics);
+
+            var zhLyrics = Lyrics.Parse(subtitle.Chinese);
+            if (zhLyrics.Exceptions.Count > 0)
+            {
+                throw new ApplicationException("lrc解析失败");
+            }
+            zhLyrics.Lyrics.PreApplyOffset();
+            var zhSubs = FromLrc(zhLyrics.Lyrics);
+
+            return (enSubs, zhSubs);
+        }
+
+        public MultiSubTitle Trans(string subtitle)
+        {
+            return new MultiSubTitle(string.Empty, subtitle);
         }
     }
 }
