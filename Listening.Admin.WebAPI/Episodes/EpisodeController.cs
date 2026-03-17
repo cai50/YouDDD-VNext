@@ -70,7 +70,6 @@ public class EpisodeController : ControllerBase
         var album = await repository.GetEpisodeByIdAsync(id);
         if (album == null)
         {
-            //这样做仍然是幂等的，因为“调用N次，确保服务器处于与第一次调用相同的状态。”与响应无关
             return NotFound($"没有Id={id}的Episode");
         }
         album.SoftDelete();//软删除
@@ -81,7 +80,6 @@ public class EpisodeController : ControllerBase
     [Route("{id}")]
     public async Task<ActionResult<Episode>> FindById([RequiredGuid] Guid id)
     {
-        //因为这是后台系统，所以不在乎把 Episode全部内容返回给客户端的问题，以后如果开放给外部系统再定义ViewModel
         var episode = await repository.GetEpisodeByIdAsync(id);
         if (episode == null)
         {
@@ -97,7 +95,6 @@ public class EpisodeController : ControllerBase
         return repository.GetEpisodesByAlbumIdAsync(albumId);
     }
 
-    //获取albumId下所有的转码任务
     [HttpGet]
     [Route("{albumId}")]
     public async Task<ActionResult<EncodingEpisodeInfo[]>> FindEncodingEpisodesByAlbumId([RequiredGuid] Guid albumId)
