@@ -26,10 +26,28 @@ namespace SearchService.Infrastructure
         {
             int from = PageSize * (PageIndex - 1);
             string kw = Keyword;
-            Func<QueryContainerDescriptor<Episode>, QueryContainer> query = (q) =>
-                          q.Match(mq => mq.Field(f => f.CnName).Query(kw))
-                          || q.Match(mq => mq.Field(f => f.EngName).Query(kw))
-                          || q.Match(mq => mq.Field(f => f.PlainSubtitle).Query(kw));
+            Func<QueryContainerDescriptor<Episode>, QueryContainer> query = q =>
+                q.Bool(b => b
+                    .Should(
+                        // 标题短语匹配（更严格，且更高权重）
+                        s => s.MultiMatch(mm => mm
+                            .Fields(f => f.Field(p => p.CnName).Field(p => p.EngName))
+                            .Query(kw)
+                            .Type(TextQueryType.PhrasePrefix)   // 短语前缀
+                            .Operator(Operator.And)
+                            .Boost(3)
+                        ),
+                        // 正文要求较高的词覆盖比例
+                        s => s.MultiMatch(mm => mm
+                            .Fields(f => f.Field(p => p.PlainSubtitle))
+                            .Query(kw)
+                            .Operator(Operator.And)
+                            .MinimumShouldMatch("50%")         // 词匹配比例
+                            .Boost(1)
+                        )
+                    )
+                    .MinimumShouldMatch(1)
+                );
             Func<HighlightDescriptor<Episode>, IHighlight> highlightSelector = h => h
                 .Fields(fs => fs.Field(f => f.PlainSubtitle));
             var result = await this.elasticClient.SearchAsync<Episode>(s => s.Index("episodes").From(from)

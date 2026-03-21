@@ -79,7 +79,7 @@ namespace Listening.Domain.Subtitles
                 }
             }
 
-            return (enSubs, zhSubs);
+            return (zhSubs, enSubs);
         }
 
         public MultiSubTitle Trans(string subtitle)

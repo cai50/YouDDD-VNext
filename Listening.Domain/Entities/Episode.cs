@@ -82,7 +82,14 @@ public record Episode : AggregateRootEntity, IAggregateRoot
         {
             throw new ArgumentOutOfRangeException(nameof(subtitleType), $"subtitleType={subtitleType} is not supported.");
         }
-        this.SubtitleType = subtitleType;
+        if (string.Equals(subtitleType, "ass", StringComparison.OrdinalIgnoreCase))
+        {
+            this.SubtitleType = "json";
+        }
+        else
+        {
+            this.SubtitleType = subtitleType;
+        }
         this.Subtitle = parser.Trans(subtitle);
         this.AddDomainEventIfAbsent(new EpisodeUpdatedEvent(this));
         return this;
@@ -107,7 +114,7 @@ public record Episode : AggregateRootEntity, IAggregateRoot
         this.AddDomainEvent(new EpisodeDeletedEvent(this.Id));
     }
 
-    public (IEnumerable<Sentence>, IEnumerable<Sentence>) ParseSubtitle(bool IsEng = true)
+    public (IEnumerable<Sentence> zh, IEnumerable<Sentence> en) ParseSubtitle(bool IsEng = true)
     {
         var parser = SubtitleParserFactory.GetParser(this.SubtitleType);
         return parser.ParseV2(this.Subtitle);
@@ -176,6 +183,7 @@ public record Episode : AggregateRootEntity, IAggregateRoot
                 }
 
             }
+            this.subtitle = new MultiSubTitle(string.Empty, value);
             return this;
         }
         public Builder SubtitleType(string value)

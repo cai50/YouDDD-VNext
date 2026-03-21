@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using Zack.EventBus;
 using Zack.JWT;
+using System.Linq;
+using Listening.Domain.ValueObjects;
 
 namespace Listening.Admin.WebAPI.Episodes;
 [Route("[controller]/[action]")]
@@ -53,10 +55,10 @@ public class EpisodeController : ControllerBase
         //如果上传的是m4a，不用转码，直接存到数据库
         if (req.AudioUrl.ToString().EndsWith("m4a", StringComparison.OrdinalIgnoreCase))
         {
-            
+
             Episode episode = await domainService.AddEpisodeAsync(req.Name, req.AlbumId,
                 req.AudioUrl, req.DurationInSecond, req.SubtitleType, req.Subtitle);
-            
+
             dbContext.Add(episode);
             return episode.Id;
         }
@@ -260,6 +262,24 @@ public class EpisodeController : ControllerBase
     public async Task<ActionResult> Sort([RequiredGuid] Guid albumId, EpisodesSortRequest req)
     {
         await domainService.SortEpisodesAsync(albumId, req.SortedEpisodeIds);
+        return Ok();
+    }
+
+    [HttpPost]
+    [Route("RefreshSubtitles/{albumId}")]
+    [AllowAnonymous]
+    public async Task<ActionResult> RefreshSubtitles([RequiredGuid] Guid albumId)
+    {
+        var episodes = await repository.GetEpisodesByAlbumIdAsync(albumId);
+        foreach (var episode in episodes)
+        {
+            var (enSubs, zhSubs) = episode.ParseSubtitle();
+            var en = enSubs ?? Enumerable.Empty<Sentence>();
+            var zh = zhSubs ?? Enumerable.Empty<Sentence>();
+            var sentences = en.Concat(zh).ToArray();
+
+            eventBus.Publish("ListeningEpisode.Updated", new { Id = episode.Id, episode.Name, Sentences = sentences, episode.AlbumId, episode.Subtitle, episode.SubtitleType });
+        }
         return Ok();
     }
 

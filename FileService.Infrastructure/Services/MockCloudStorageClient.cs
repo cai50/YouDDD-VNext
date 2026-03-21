@@ -1,6 +1,7 @@
 ﻿using FileService.Domain;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 
 namespace FileService.Infrastructure.Services
 {
@@ -41,6 +42,10 @@ namespace FileService.Infrastructure.Services
             await content.CopyToAsync(outStream, cancellationToken);
             var req = httpContextAccessor.HttpContext.Request;
             string url = req.Scheme + "://" + req.Host + "/FileService/" + key;
+            //if (hostEnv.IsProduction())
+            //{
+            //    url = req.Scheme + "://" + req.Host + "/api" + "/FileService/" + key;
+            //}
             return new Uri(url);
         }
     }

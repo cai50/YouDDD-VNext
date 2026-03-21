@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Serilog;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using StackExchange.Redis;
@@ -23,14 +25,51 @@ namespace CommonInitializer
     {
         public static void ConfigureDbConfiguration(this WebApplicationBuilder builder)
         {
+            //builder.Host.ConfigureAppConfiguration((hostCtx, configBuilder) =>
+            //{
+            //    //不能使用ConfigureAppConfiguration中的configBuilder去读取配置，否则就循环调用了，因此这里直接自己去读取配置文件
+            //    //var configRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            //    //string connStr = configRoot.GetValue<string>("DefaultDB:ConnStr");
+            //    string connStr = builder.Configuration.GetValue<string>("DefaultDB:ConnStr");
+            //    configBuilder.AddDbConfiguration(() => new SqlConnection(connStr),tableName:"T_Docker_Congigs",reloadOnChange: true, reloadInterval: TimeSpan.FromSeconds(5));
+            //});
+#pragma warning disable ASP0013 // Suggest switching from using Configure methods to WebApplicationBuilder.Configuration
             builder.Host.ConfigureAppConfiguration((hostCtx, configBuilder) =>
             {
-                //不能使用ConfigureAppConfiguration中的configBuilder去读取配置，否则就循环调用了，因此这里直接自己去读取配置文件
-                //var configRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-                //string connStr = configRoot.GetValue<string>("DefaultDB:ConnStr");
+                // 1. 获取当前环境（Development / Production 等）
+                var env = hostCtx.HostingEnvironment;
+
+                // 2. 从当前已加载的配置中获取连接字符串
+                // 注意：在 ConfigureAppConfiguration 中，builder.Configuration 已经包含了
+                // appsettings.json 和 环境变量（如 DefaultDB__ConnStr）
                 string connStr = builder.Configuration.GetValue<string>("DefaultDB:ConnStr");
-                configBuilder.AddDbConfiguration(() => new SqlConnection(connStr), reloadOnChange: true, reloadInterval: TimeSpan.FromSeconds(5));
+
+                if (string.IsNullOrEmpty(connStr))
+                {
+                    // 防御性处理：如果没拿到连接字符串，记录日志或跳过 DB 配置加载
+                    // 避免报 "The ConnectionString property has not been initialized"
+                    return;
+                }
+
+                if (env.IsDevelopment())
+                {
+                    // --- 开发环境：使用默认设置 ---
+                    configBuilder.AddDbConfiguration(
+                        () => new SqlConnection(connStr),
+                        reloadOnChange: true,
+                        reloadInterval: TimeSpan.FromSeconds(5));
+                }
+                else
+                {
+                    // --- 非开发环境（如 Production）：使用指定的表名 ---
+                    configBuilder.AddDbConfiguration(
+                        () => new SqlConnection(connStr),
+                        tableName: "T_Docker_Configs", // 指定生产环境配置表
+                        reloadOnChange: true,
+                        reloadInterval: TimeSpan.FromSeconds(5));
+                }
             });
+#pragma warning restore ASP0013 // Suggest switching from using Configure methods to WebApplicationBuilder.Configuration
         }
 
         public static void ConfigureExtraServices(this WebApplicationBuilder builder, InitializerOptions initOptions)
@@ -45,7 +84,18 @@ namespace CommonInitializer
                 //如果放到UserSecrets中，每个项目都要配置，很麻烦
                 //因此这里推荐放到环境变量中。
                 string connStr = configuration.GetValue<string>("DefaultDB:ConnStr");
-                ctx.UseSqlServer(connStr);
+
+                // 1. 定义 MySQL 版本 (自动探测或手动指定)
+                // 推荐手动指定，避免程序启动时额外连一次数据库去探测版本，节省那点微小的启动内存
+                var serverVersion = new MySqlServerVersion(new Version(8, 0, 31));
+
+                // 2. 切换为 UseMySql
+                ctx.UseMySql(connStr, serverVersion, options =>
+                {
+                    // 针对微服务和低内存环境的优化设置
+                    options.EnableRetryOnFailure(5); // 自动重试
+                    options.CommandTimeout(30);     // 超时时间
+                });
             }, assemblies);
 
             //开始:Authentication,Authorization

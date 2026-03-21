@@ -70,7 +70,7 @@ namespace Listening.Domain.Subtitles
             zhLyrics.Lyrics.PreApplyOffset();
             var zhSubs = FromLrc(zhLyrics.Lyrics);
 
-            return (enSubs, zhSubs);
+            return (zhSubs, enSubs);
         }
 
         public MultiSubTitle Trans(string subtitle)
