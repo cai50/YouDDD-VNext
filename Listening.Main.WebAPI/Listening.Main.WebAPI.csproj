@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UserSecretsId>1b70d496-420f-4fe9-8aa5-1d314d0a7cdd</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>

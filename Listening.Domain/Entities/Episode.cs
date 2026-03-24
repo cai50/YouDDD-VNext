@@ -181,9 +181,12 @@ public record Episode : AggregateRootEntity, IAggregateRoot
                     this.subtitleType = "json";
                     this.subtitle = parser.Trans(value);
                 }
-
+                else
+                {
+                    this.subtitle = new MultiSubTitle(string.Empty, value);
+                }
             }
-            this.subtitle = new MultiSubTitle(string.Empty, value);
+            
             return this;
         }
         public Builder SubtitleType(string value)

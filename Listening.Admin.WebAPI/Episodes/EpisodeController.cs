@@ -1,15 +1,16 @@
 ﻿using FileService.SDK.NETCore;
 using Listening.Admin.WebAPI.Options;
+using Listening.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using Zack.Commons;
 using Zack.EventBus;
 using Zack.JWT;
-using System.Linq;
-using Listening.Domain.ValueObjects;
 
 namespace Listening.Admin.WebAPI.Episodes;
 [Route("[controller]/[action]")]
@@ -85,12 +86,16 @@ public class EpisodeController : ControllerBase
         FileServiceClient fileService = new FileServiceClient(httpClientFactory,
             urlRoot, jwtOptions.Value, tokenService);
 
-        Dictionary<string, FileInfo> subtitleFiles = new DirectoryInfo(req.SubtitleDir)
+        if (!Directory.Exists(req.AudioDir))
+        {
+            return BadRequest($"容器内找不到路径: {req.AudioDir}。请确认 Docker 挂载是否成功。");
+        }
+        Dictionary<string, FileInfo> subtitleFiles = new DirectoryInfo(req.SubtitleDir.Replace("\\", "/"))
             .GetFiles("*.ass", SearchOption.TopDirectoryOnly)
             .GroupBy(f => Path.GetFileNameWithoutExtension(f.Name), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-        FileInfo[] audioFiles = new DirectoryInfo(req.AudioDir)
+        FileInfo[] audioFiles = new DirectoryInfo(req.AudioDir.Replace("\\", "/"))
             .GetFiles("*.m4a", SearchOption.TopDirectoryOnly)
             .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();

@@ -17,46 +17,44 @@ namespace Listening.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Listening.Domain.Entities.Album", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("CoverUrl")
                         .HasMaxLength(500)
                         .IsUnicode(true)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("varchar(500)");
 
                     b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsVisible")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("SequenceNumber")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
 
                     b.HasIndex("CategoryId", "IsDeleted");
 
@@ -67,31 +65,29 @@ namespace Listening.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("CoverUrl")
                         .HasMaxLength(500)
                         .IsUnicode(true)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("varchar(500)");
 
                     b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("SequenceNumber")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
 
                     b.ToTable("T_Categories", (string)null);
                 });
@@ -100,34 +96,34 @@ namespace Listening.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("AlbumId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("AudioUrl")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .IsUnicode(true)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<double>("DurationInSecond")
-                        .HasColumnType("float");
+                        .HasColumnType("double");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsVisible")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("SequenceNumber")
                         .HasColumnType("int");
@@ -140,8 +136,6 @@ namespace Listening.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
-
                     b.HasIndex("AlbumId", "IsDeleted");
 
                     b.ToTable("T_Episodes", (string)null);
@@ -152,19 +146,19 @@ namespace Listening.Infrastructure.Migrations
                     b.OwnsOne("Zack.DomainCommons.Models.MultilingualString", "Name", b1 =>
                         {
                             b1.Property<Guid>("AlbumId")
-                                .HasColumnType("uniqueidentifier");
+                                .HasColumnType("char(36)");
 
                             b1.Property<string>("Chinese")
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(200)");
+                                .HasColumnType("varchar(200)");
 
                             b1.Property<string>("English")
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(200)");
+                                .HasColumnType("varchar(200)");
 
                             b1.HasKey("AlbumId");
 
@@ -183,19 +177,19 @@ namespace Listening.Infrastructure.Migrations
                     b.OwnsOne("Zack.DomainCommons.Models.MultilingualString", "Name", b1 =>
                         {
                             b1.Property<Guid>("CategoryId")
-                                .HasColumnType("uniqueidentifier");
+                                .HasColumnType("char(36)");
 
                             b1.Property<string>("Chinese")
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(200)");
+                                .HasColumnType("varchar(200)");
 
                             b1.Property<string>("English")
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(200)");
+                                .HasColumnType("varchar(200)");
 
                             b1.HasKey("CategoryId");
 
@@ -214,19 +208,19 @@ namespace Listening.Infrastructure.Migrations
                     b.OwnsOne("Zack.DomainCommons.Models.MultilingualString", "Name", b1 =>
                         {
                             b1.Property<Guid>("EpisodeId")
-                                .HasColumnType("uniqueidentifier");
+                                .HasColumnType("char(36)");
 
                             b1.Property<string>("Chinese")
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(200)");
+                                .HasColumnType("varchar(200)");
 
                             b1.Property<string>("English")
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(200)");
+                                .HasColumnType("varchar(200)");
 
                             b1.HasKey("EpisodeId");
 
@@ -239,19 +233,19 @@ namespace Listening.Infrastructure.Migrations
                     b.OwnsOne("Zack.DomainCommons.Models.MultiSubTitle", "Subtitle", b1 =>
                         {
                             b1.Property<Guid>("EpisodeId")
-                                .HasColumnType("uniqueidentifier");
+                                .HasColumnType("char(36)");
 
                             b1.Property<string>("Chinese")
                                 .IsRequired()
                                 .HasMaxLength(2147483647)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(max)");
+                                .HasColumnType("longtext");
 
                             b1.Property<string>("English")
                                 .IsRequired()
                                 .HasMaxLength(2147483647)
                                 .IsUnicode(true)
-                                .HasColumnType("nvarchar(max)");
+                                .HasColumnType("longtext");
 
                             b1.HasKey("EpisodeId");
 

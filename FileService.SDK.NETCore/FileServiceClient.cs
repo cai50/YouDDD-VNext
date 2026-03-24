@@ -23,12 +23,17 @@ namespace FileService.SDK.NETCore
             this.optionsSnapshot = optionsSnapshot;
             this.tokenService = tokenService;
         }
-        public Task<FileExistsResponse> FileExistsAsync(long fileSize, string sha256Hash, CancellationToken stoppingToken = default)
+        public async Task<FileExistsResponse> FileExistsAsync(long fileSize, string sha256Hash, CancellationToken stoppingToken = default)
         {
-            string relativeUrl = FormattableStringHelper.BuildUrl($"api/Uploader/FileExists?fileSize={fileSize}&sha256Hash={sha256Hash}");
-            Uri requestUri = new Uri(serverRoot, relativeUrl);
+            string token = BuildToken();
+            string relativeUrl = FormattableStringHelper.BuildUrl($"/Uploader/FileExists?fileSize={fileSize}&sha256Hash={sha256Hash}");
+            string fullUrl = $"{serverRoot.ToString().TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+            Uri requestUri = new Uri(fullUrl);
+            //Uri requestUri = new Uri(serverRoot, relativeUrl);
             var httpClient = httpClientFactory.CreateClient();
-            return httpClient.GetJsonAsync<FileExistsResponse>(requestUri, stoppingToken)!;
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var result = await httpClient.GetJsonAsync<FileExistsResponse>(requestUri, stoppingToken);
+            return result!;
         }
 
         string BuildToken()

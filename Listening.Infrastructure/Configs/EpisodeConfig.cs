@@ -9,7 +9,7 @@ namespace Listening.Domain.Configs
         public void Configure(EntityTypeBuilder<Episode> builder)
         {
             builder.ToTable("T_Episodes");
-            builder.HasKey(e => e.Id).IsClustered(false);//Guid类型不要聚集索引，否则会影响性能
+            builder.HasKey(e => e.Id);//Guid类型不要聚集索引，否则会影响性能
             builder.HasIndex(e => new { e.AlbumId, e.IsDeleted });//索引不要忘了加上IsDeleted，否则会影响性能
             builder.OwnsOneMultilingualString(e => e.Name);
             //尽量用标准的、Provider无关的这些FluentAPI去配置，不要和数据库耦合

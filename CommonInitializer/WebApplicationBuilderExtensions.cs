@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using MySqlConnector;
 using Serilog;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using StackExchange.Redis;
@@ -51,20 +52,36 @@ namespace CommonInitializer
                     return;
                 }
 
+                //if (env.IsDevelopment())
+                //{
+                //    // --- 开发环境：使用默认设置 ---
+                //    configBuilder.AddDbConfiguration(
+                //        () => new SqlConnection(connStr),
+                //        reloadOnChange: true,
+                //        reloadInterval: TimeSpan.FromSeconds(5));
+                //}
+                //else
+                //{
+                //    // --- 非开发环境（如 Production）：使用指定的表名 ---
+                //    configBuilder.AddDbConfiguration(
+                //        () => new SqlConnection(connStr),
+                //        tableName: "T_Docker_Configs", // 指定生产环境配置表
+                //        reloadOnChange: true,
+                //        reloadInterval: TimeSpan.FromSeconds(5));
+                //}
+
                 if (env.IsDevelopment())
                 {
-                    // --- 开发环境：使用默认设置 ---
                     configBuilder.AddDbConfiguration(
-                        () => new SqlConnection(connStr),
+                        () => new MySqlConnection(connStr), // 换成 MySqlConnection
                         reloadOnChange: true,
                         reloadInterval: TimeSpan.FromSeconds(5));
                 }
                 else
                 {
-                    // --- 非开发环境（如 Production）：使用指定的表名 ---
                     configBuilder.AddDbConfiguration(
-                        () => new SqlConnection(connStr),
-                        tableName: "T_Docker_Configs", // 指定生产环境配置表
+                        () => new MySqlConnection(connStr), // 换成 MySqlConnection
+                        tableName: "T_Docker_Configs",
                         reloadOnChange: true,
                         reloadInterval: TimeSpan.FromSeconds(5));
                 }
@@ -93,7 +110,7 @@ namespace CommonInitializer
                 ctx.UseMySql(connStr, serverVersion, options =>
                 {
                     // 针对微服务和低内存环境的优化设置
-                    options.EnableRetryOnFailure(5); // 自动重试
+                    //options.EnableRetryOnFailure(5); // 自动重试
                     options.CommandTimeout(30);     // 超时时间
                 });
             }, assemblies);

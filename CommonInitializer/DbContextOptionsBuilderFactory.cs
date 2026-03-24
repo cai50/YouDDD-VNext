@@ -25,7 +25,7 @@ namespace CommonInitializer
             optionsBuilder.UseMySql(connStr, serverVersion, options =>
             {
                 // 针对微服务和低内存环境的优化设置
-                options.EnableRetryOnFailure(3); // 自动重试
+                //options.EnableRetryOnFailure(3); // 自动重试
                 options.CommandTimeout(30);     // 超时时间
             });
 

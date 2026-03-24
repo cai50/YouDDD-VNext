@@ -56,6 +56,16 @@ dotnet ef database update --project ./FileService.Infrastructure  --startup-proj
 dotnet ef database update --project ./Listening.Infrastructure  --startup-project ./Listening.Admin.WebAPI 
 ```
 
+# 重新生成针对 MySQL 的初始迁移
+dotnet ef migrations add InitialMySql
+```bash
+# cd路由到YouZack-VNext目录，使用.NET的ef组件，完成数据库迁移和初始化
+dotnet ef migrations add InitialMySql --project ./FileService.Infrastructure  --startup-project ./FileService.WebAPI 
+dotnet ef migrations add InitialMySql --project ./IdentityService.Infrastructure --startup-project ./IdentityService.WebAPI
+dotnet ef migrations add InitialMySql --project ./MediaEncoder.Infrastructure  --startup-project ./MediaEncoder.WebAPI 
+dotnet ef migrations add InitialMySql --project ./Listening.Infrastructure  --startup-project ./Listening.Admin.WebAPI 
+```
+
 ```add
 dotnet ef migrations remove --project Listening.Infrastructure --startup-project Listening.Admin.WebAPI
 dotnet ef migrations add Episode0311 --no-build --project Listening.Infrastructure --startup-project Listening.Admin.WebAPI

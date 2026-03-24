@@ -9,7 +9,7 @@ namespace Listening.Domain.Configs
         public void Configure(EntityTypeBuilder<Category> builder)
         {
             builder.ToTable("T_Categories");
-            builder.HasKey(e => e.Id).IsClustered(false);
+            builder.HasKey(e => e.Id);
             builder.OwnsOneMultilingualString(e => e.Name);
             builder.Property(e => e.CoverUrl).IsRequired(false).HasMaxLength(500).IsUnicode();
         }

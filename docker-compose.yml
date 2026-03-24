@@ -8,7 +8,7 @@ services:
       - "50404:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
+      - DefaultDB__ConnStr=Server=mysql_db;Port=3306;Database=YouCJVNextDB;Uid=root;Pwd=YourStrongPassword!123;Character Set=utf8mb4;
     networks:
       - shared
     restart: unless-stopped
@@ -22,7 +22,9 @@ services:
       - "50403:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
+      - DefaultDB__ConnStr=Server=mysql_db;Port=3306;Database=YouCJVNextDB;Uid=root;Pwd=YourStrongPassword!123;Character Set=utf8mb4;
+    volumes: 	                  
+      - "I:/download/EngStudy/seen:/app/importdata"
     networks:
       - shared
     restart: unless-stopped
@@ -36,41 +38,42 @@ services:
       - "50401:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
+      - DefaultDB__ConnStr=Server=mysql_db;Port=3306;Database=YouCJVNextDB;Uid=root;Pwd=YourStrongPassword!123;Character Set=utf8mb4;
     volumes: 	                  
       - G:/work/project/net/NETBookMaterials-main/最后大项目代码/YouZack-VNext/FileService.WebAPI/wwwroot:/app/wwwroot
+      - "I:/download/EngStudy/seen:/app/importdata"
         
     networks:
       - shared
     restart: unless-stopped
 
-  mediaencoder.webapi:
-    image: mediaencoder.webapi:local
-    build:
-      context: .
-      dockerfile: MediaEncoder.WebAPI/Dockerfile
-    ports:
-      - "50405:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
-    networks:
-      - shared
-    restart: unless-stopped
-
-  searchservice.webapi:
-    image: searchservice.webapi:local
-    build:
-      context: .
-      dockerfile: SearchService.WebAPI/Dockerfile
-    ports:
-      - "50406:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
-    networks:
-      - shared
-    restart: unless-stopped
+#  mediaencoder.webapi:
+#    image: mediaencoder.webapi:local
+#    build:
+#      context: .
+#      dockerfile: MediaEncoder.WebAPI/Dockerfile
+#    ports:
+#      - "50405:8080"
+#    environment:
+#      - ASPNETCORE_ENVIRONMENT=Production
+#      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
+#    networks:
+#      - shared
+#    restart: unless-stopped
+#
+#  searchservice.webapi:
+#    image: searchservice.webapi:local
+#    build:
+#      context: .
+#      dockerfile: SearchService.WebAPI/Dockerfile
+#    ports:
+#      - "50406:8080"
+#    environment:
+#      - ASPNETCORE_ENVIRONMENT=Production
+#      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
+#    networks:
+#      - shared
+#    restart: unless-stopped
 
   identityservice.webapi:
     image: identityservice.webapi:local
@@ -81,7 +84,7 @@ services:
       - "50402:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - DefaultDB__ConnStr=Server=host.docker.internal,1433;Database=YouCJVNextDB;User Id=sa;Password=YourStrongPassword!123;TrustServerCertificate=True
+      - DefaultDB__ConnStr=Server=mysql_db;Port=3306;Database=YouCJVNextDB;Uid=root;Pwd=YourStrongPassword!123;Character Set=utf8mb4;
     networks:
       - shared
     restart: unless-stopped
